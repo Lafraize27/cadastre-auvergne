@@ -145,15 +145,23 @@
         fetch("data/" + name + ".geojson")
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                var geojsonLayer = L.geoJSON(data, {
-                    style: function () { return styles[styleKey]; },
-                    onEachFeature: function (feature, layer) {
+                var layerOptions = {
+                    style: function () { return styles[styleKey]; }
+                };
+
+                // Communes = contours non-interactifs pour ne pas bloquer les clics
+                if (name === "communes") {
+                    layerOptions.interactive = false;
+                } else {
+                    layerOptions.onEachFeature = function (feature, layer) {
                         layer.on("click", function (e) {
                             onFeatureClick(e, styles[styleKey], layerNames[name]);
                             L.DomEvent.stopPropagation(e);
                         });
-                    }
-                });
+                    };
+                }
+
+                var geojsonLayer = L.geoJSON(data, layerOptions);
 
                 layers[name] = geojsonLayer;
 
