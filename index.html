@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastre - Communes de Saint-Cirgues, Lavoûte-Chilhac, Blassac</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+    <div id="sidebar">
+        <h1>Cadastre</h1>
+        <p class="subtitle">Saint-Cirgues &bull; Lavoûte-Chilhac &bull; Blassac</p>
+
+        <div class="section">
+            <h2>Couches</h2>
+            <label class="layer-toggle">
+                <input type="checkbox" id="layer-communes" checked>
+                <span class="swatch" style="background: rgba(65,105,225,0.3); border-color: royalblue;"></span>
+                Communes
+            </label>
+            <label class="layer-toggle">
+                <input type="checkbox" id="layer-parcelles" checked>
+                <span class="swatch" style="background: rgba(34,139,34,0.15); border-color: forestgreen;"></span>
+                Parcelles
+            </label>
+            <label class="layer-toggle">
+                <input type="checkbox" id="layer-batiments">
+                <span class="swatch" style="background: rgba(178,34,34,0.5); border-color: firebrick;"></span>
+                Bâtiments
+            </label>
+            <label class="layer-toggle">
+                <input type="checkbox" id="layer-selection" checked>
+                <span class="swatch" style="background: rgba(255,165,0,0.45); border-color: darkorange;"></span>
+                Parcelles sélectionnées
+            </label>
+        </div>
+
+        <div class="section">
+            <h2>Recherche parcelle</h2>
+            <div class="search-form">
+                <select id="search-commune">
+                    <option value="">Commune...</option>
+                    <option value="43175">Saint-Cirgues</option>
+                    <option value="43118">Lavoûte-Chilhac</option>
+                    <option value="43031">Blassac</option>
+                </select>
+                <input type="text" id="search-section" placeholder="Section (ex: A)" maxlength="2">
+                <input type="text" id="search-numero" placeholder="N° (ex: 76)">
+                <button id="btn-search">Rechercher</button>
+            </div>
+            <div id="search-result"></div>
+        </div>
+
+        <div class="section">
+            <h2>Informations</h2>
+            <div id="info-panel">
+                <p class="hint">Cliquez sur un élément de la carte pour afficher ses informations.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <button id="sidebar-toggle" title="Afficher/masquer le panneau">&#9776;</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
