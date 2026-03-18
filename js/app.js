@@ -87,11 +87,11 @@
         section: "Section",
         numero: "Numéro",
         contenance: "Contenance (m²)",
-        arpente: "Arpenté",
-        type: "Type bâtiment",
-        created: "Créé le",
-        updated: "Mis à jour le"
+        type: "Type bâtiment"
     };
+
+    // Propriétés à masquer dans le panneau info
+    var HIDDEN_KEYS = { arpente: true, created: true, updated: true };
 
     // Calcul de surface d'un polygone (coordonnées lon/lat) via formule de Gauss sur ellipsoïde approx.
     function computeAreaM2(geometry) {
@@ -123,9 +123,9 @@
         var html = '<table><tr><td colspan="2" style="color:#3b82f6;font-weight:600;padding-bottom:6px;">' + layerName + '</td></tr>';
         for (var key in properties) {
             if (properties[key] === null || properties[key] === undefined) continue;
+            if (HIDDEN_KEYS[key]) continue;
             var label = LABELS[key] || key;
             var val = properties[key];
-            if (key === "arpente") val = val ? "Oui" : "Non";
             if (key === "contenance") val = Number(val).toLocaleString("fr-FR") + " m²";
             html += "<tr><td>" + label + "</td><td>" + val + "</td></tr>";
         }
@@ -264,7 +264,8 @@
         geojsonLayer.eachLayer(function (layer) {
             var p = layer.feature.properties;
             var communeName = COMMUNE_NAMES[p.commune] || p.commune;
-            var label = communeName + " - " + p.section + " n\u00b0 " + p.numero;
+            var surface = Math.round(p.contenance || computeAreaM2(layer.feature.geometry));
+            var label = communeName + " - " + p.section + " n\u00b0 " + p.numero + " (" + surface.toLocaleString("fr-FR") + " m\u00b2)";
             var id = p.commune + "_" + p.section + "_" + p.numero;
             items.push({ layer: layer, label: label, id: id, commune: communeName, section: p.section, numero: parseInt(p.numero, 10) });
         });
@@ -278,14 +279,21 @@
 
         // Build checkboxes
         items.forEach(function (item) {
-            var lbl = document.createElement("label");
+            var row = document.createElement("div");
+            row.className = "parcelle-row";
+
             var cb = document.createElement("input");
             cb.type = "checkbox";
             cb.checked = true;
             cb.dataset.parcelId = item.id;
-            lbl.appendChild(cb);
-            lbl.appendChild(document.createTextNode(" " + item.label));
-            listContainer.appendChild(lbl);
+
+            var span = document.createElement("span");
+            span.className = "parcelle-label";
+            span.textContent = item.label;
+
+            row.appendChild(cb);
+            row.appendChild(span);
+            listContainer.appendChild(row);
 
             filteredParcelLayers.push({ layer: item.layer, id: item.id, visible: true });
 
@@ -302,9 +310,8 @@
                 updateSelectAllState();
             });
 
-            // Click on label text zooms to parcelle
-            lbl.addEventListener("dblclick", function (e) {
-                e.preventDefault();
+            // Click on label text zooms to parcelle (not on checkbox)
+            span.addEventListener("click", function () {
                 map.fitBounds(item.layer.getBounds(), { maxZoom: 18, padding: [50, 50] });
                 resetHighlight();
                 currentHighlight = { layer: item.layer, originalStyle: Object.assign({}, styles.selection) };
@@ -386,6 +393,15 @@
         document.getElementById(id).addEventListener("keydown", function (e) {
             if (e.key === "Enter") btnSearch.click();
         });
+    });
+
+    // ── Search collapse toggle ──
+    var searchToggle = document.getElementById("search-toggle");
+    var searchBody = document.getElementById("search-body");
+    searchToggle.addEventListener("click", function () {
+        var collapsed = searchBody.style.display === "none";
+        searchBody.style.display = collapsed ? "block" : "none";
+        searchToggle.textContent = collapsed ? "\u25BC" : "\u25B6";
     });
 
     // ── Sidebar toggle ──

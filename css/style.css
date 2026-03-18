@@ -98,25 +98,6 @@ body {
     font-size: 0.82rem;
 }
 
-#parcelles-list label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 0;
-    cursor: pointer;
-    font-size: 0.82rem;
-    color: #cbd5e1;
-}
-
-#parcelles-list label:hover {
-    color: #f8fafc;
-}
-
-#parcelles-list input[type="checkbox"] {
-    accent-color: darkorange;
-    width: 14px;
-    height: 14px;
-}
 
 #parcelles-list-container::-webkit-scrollbar {
     width: 6px;
@@ -129,6 +110,56 @@ body {
 #parcelles-list-container::-webkit-scrollbar-thumb {
     background: #475569;
     border-radius: 3px;
+}
+
+/* Section header with collapse */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.collapse-toggle {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.collapse-toggle:hover {
+    color: #e2e8f0;
+    background: #334155;
+}
+
+/* Parcelle rows */
+.parcelle-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+
+.parcelle-row input[type="checkbox"] {
+    accent-color: darkorange;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.parcelle-label {
+    cursor: pointer;
+    flex: 1;
+}
+
+.parcelle-label:hover {
+    color: #fbbf24;
+    text-decoration: underline;
 }
 
 /* Search */
