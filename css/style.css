@@ -78,6 +78,59 @@ body {
     border-radius: 3px;
 }
 
+/* Parcelles list */
+#parcelles-list-container {
+    margin-top: 8px;
+    padding: 8px;
+    background: #0f172a;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.parcelle-list-header {
+    border-bottom: 1px solid #334155;
+    padding-bottom: 6px !important;
+    margin-bottom: 4px;
+}
+
+.parcelle-list-header strong {
+    font-size: 0.82rem;
+}
+
+#parcelles-list label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+
+#parcelles-list label:hover {
+    color: #f8fafc;
+}
+
+#parcelles-list input[type="checkbox"] {
+    accent-color: darkorange;
+    width: 14px;
+    height: 14px;
+}
+
+#parcelles-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+#parcelles-list-container::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+#parcelles-list-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
 /* Search */
 .search-form {
     display: flex;

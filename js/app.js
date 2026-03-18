@@ -169,6 +169,16 @@
     var layerStyleKeys = ["communes", "parcelles", "batiments", "selection"];
     var checkboxIds = ["layer-communes", "layer-parcelles", "layer-batiments", "layer-selection"];
 
+    // Mapping code commune -> nom
+    var COMMUNE_NAMES = {
+        "43175": "Saint-Cirgues",
+        "43118": "Lavoûte-Chilhac",
+        "43031": "Blassac"
+    };
+
+    // Stockage des sous-couches individuelles pour parcelles filtrées
+    var filteredParcelLayers = []; // { layer, id, visible }
+
     var loaded = 0;
 
     layerFiles.forEach(function (name, i) {
@@ -203,16 +213,15 @@
                     geojsonLayer.addTo(map);
                     if (name === "parcelles_filtrees") {
                         geojsonLayer.bringToFront();
+                        buildParcellesList(geojsonLayer);
                     }
                 }
 
                 loaded++;
                 if (loaded === layerFiles.length) {
-                    // Fit map to communes bounds
                     if (layers.communes) {
                         map.fitBounds(layers.communes.getBounds(), { padding: [20, 20] });
                     }
-                    // Ensure correct z-order
                     if (layers.parcelles) layers.parcelles.bringToBack();
                     if (layers.communes) layers.communes.bringToBack();
                 }
@@ -223,8 +232,19 @@
                     checkbox.addEventListener("change", function () {
                         if (this.checked) {
                             map.addLayer(geojsonLayer);
+                            // Si c'est la couche sélection, réafficher les parcelles individuelles cochées
+                            if (name === "parcelles_filtrees") {
+                                filteredParcelLayers.forEach(function (item) {
+                                    if (item.visible) item.layer.addTo(map);
+                                });
+                            }
                         } else {
                             map.removeLayer(geojsonLayer);
+                            if (name === "parcelles_filtrees") {
+                                filteredParcelLayers.forEach(function (item) {
+                                    map.removeLayer(item.layer);
+                                });
+                            }
                         }
                     });
                 }
@@ -233,6 +253,94 @@
                 console.error("Erreur chargement " + name + ":", err);
             });
     });
+
+    // ── Build parcelles filtrées list ──
+    function buildParcellesList(geojsonLayer) {
+        var listContainer = document.getElementById("parcelles-list");
+        var selectAll = document.getElementById("select-all-parcelles");
+
+        // Collect and sort features
+        var items = [];
+        geojsonLayer.eachLayer(function (layer) {
+            var p = layer.feature.properties;
+            var communeName = COMMUNE_NAMES[p.commune] || p.commune;
+            var label = communeName + " - " + p.section + " n\u00b0 " + p.numero;
+            var id = p.commune + "_" + p.section + "_" + p.numero;
+            items.push({ layer: layer, label: label, id: id, commune: communeName, section: p.section, numero: parseInt(p.numero, 10) });
+        });
+
+        // Sort by commune, section, numero
+        items.sort(function (a, b) {
+            if (a.commune !== b.commune) return a.commune.localeCompare(b.commune);
+            if (a.section !== b.section) return a.section.localeCompare(b.section);
+            return a.numero - b.numero;
+        });
+
+        // Build checkboxes
+        items.forEach(function (item) {
+            var lbl = document.createElement("label");
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = true;
+            cb.dataset.parcelId = item.id;
+            lbl.appendChild(cb);
+            lbl.appendChild(document.createTextNode(" " + item.label));
+            listContainer.appendChild(lbl);
+
+            filteredParcelLayers.push({ layer: item.layer, id: item.id, visible: true });
+
+            cb.addEventListener("change", function () {
+                var entry = filteredParcelLayers.find(function (e) { return e.id === item.id; });
+                if (cb.checked) {
+                    entry.visible = true;
+                    item.layer.addTo(map);
+                    item.layer.setStyle(styles.selection);
+                } else {
+                    entry.visible = false;
+                    map.removeLayer(item.layer);
+                }
+                updateSelectAllState();
+            });
+
+            // Click on label text zooms to parcelle
+            lbl.addEventListener("dblclick", function (e) {
+                e.preventDefault();
+                map.fitBounds(item.layer.getBounds(), { maxZoom: 18, padding: [50, 50] });
+                resetHighlight();
+                currentHighlight = { layer: item.layer, originalStyle: Object.assign({}, styles.selection) };
+                item.layer.setStyle(styles.highlight);
+                item.layer.bringToFront();
+                showInfo(item.layer.feature.properties, "Parcelle sélectionnée", item.layer.feature.geometry);
+            });
+        });
+
+        // Select all / deselect all
+        selectAll.addEventListener("change", function () {
+            var checked = selectAll.checked;
+            var checkboxes = listContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function (cb) {
+                cb.checked = checked;
+            });
+            filteredParcelLayers.forEach(function (entry) {
+                entry.visible = checked;
+                if (checked) {
+                    entry.layer.addTo(map);
+                    entry.layer.setStyle(styles.selection);
+                } else {
+                    map.removeLayer(entry.layer);
+                }
+            });
+        });
+
+        function updateSelectAllState() {
+            var checkboxes = listContainer.querySelectorAll('input[type="checkbox"]');
+            var allChecked = true;
+            checkboxes.forEach(function (cb) {
+                if (!cb.checked) allChecked = false;
+            });
+            selectAll.checked = allChecked;
+        }
+    }
 
     // ── Search ──
     var btnSearch = document.getElementById("btn-search");
