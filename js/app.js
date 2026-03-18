@@ -93,7 +93,33 @@
         updated: "Mis à jour le"
     };
 
-    function showInfo(properties, layerName) {
+    // Calcul de surface d'un polygone (coordonnées lon/lat) via formule de Gauss sur ellipsoïde approx.
+    function computeAreaM2(geometry) {
+        var totalArea = 0;
+        var polygons = [];
+        if (geometry.type === "Polygon") {
+            polygons = [geometry.coordinates];
+        } else if (geometry.type === "MultiPolygon") {
+            polygons = geometry.coordinates;
+        }
+        polygons.forEach(function (poly) {
+            poly.forEach(function (ring, ringIndex) {
+                var ringArea = 0;
+                for (var i = 0; i < ring.length - 1; i++) {
+                    var p1 = ring[i];
+                    var p2 = ring[i + 1];
+                    ringArea += toRad(p2[0] - p1[0]) * (2 + Math.sin(toRad(p1[1])) + Math.sin(toRad(p2[1])));
+                }
+                ringArea = Math.abs(ringArea * 6378137 * 6378137 / 2);
+                totalArea += ringIndex === 0 ? ringArea : -ringArea;
+            });
+        });
+        return Math.abs(totalArea);
+    }
+
+    function toRad(deg) { return deg * Math.PI / 180; }
+
+    function showInfo(properties, layerName, geometry) {
         var html = '<table><tr><td colspan="2" style="color:#3b82f6;font-weight:600;padding-bottom:6px;">' + layerName + '</td></tr>';
         for (var key in properties) {
             if (properties[key] === null || properties[key] === undefined) continue;
@@ -102,6 +128,11 @@
             if (key === "arpente") val = val ? "Oui" : "Non";
             if (key === "contenance") val = Number(val).toLocaleString("fr-FR") + " m²";
             html += "<tr><td>" + label + "</td><td>" + val + "</td></tr>";
+        }
+        // Ajouter la surface calculée pour les bâtiments
+        if (geometry && layerName === "Bâtiment") {
+            var area = computeAreaM2(geometry);
+            html += '<tr><td>Surface</td><td>' + Math.round(area).toLocaleString("fr-FR") + ' m²</td></tr>';
         }
         html += "</table>";
         infoPanel.innerHTML = html;
@@ -123,7 +154,7 @@
         currentHighlight = { layer: layer, originalStyle: Object.assign({}, style) };
         layer.setStyle(styles.highlight);
         layer.bringToFront();
-        showInfo(layer.feature.properties, layerName);
+        showInfo(layer.feature.properties, layerName, layer.feature.geometry);
     }
 
     // ── Load GeoJSON layers ──
@@ -153,7 +184,7 @@
                 if (name === "communes") {
                     layerOptions.interactive = false;
                 } else {
-                    layerOptions.onEachFeature = function (feature, layer) {
+                    layerOptions.onEachFeature = function (_feature, layer) {
                         layer.on("click", function (e) {
                             onFeatureClick(e, styles[styleKey], layerNames[name]);
                             L.DomEvent.stopPropagation(e);
@@ -236,7 +267,7 @@
             found.setStyle(styles.highlight);
             found.bringToFront();
             map.fitBounds(found.getBounds(), { maxZoom: 18, padding: [50, 50] });
-            showInfo(found.feature.properties, "Parcelle");
+            showInfo(found.feature.properties, "Parcelle", found.feature.geometry);
         } else {
             searchResult.textContent = "Parcelle non trouvée.";
         }
